@@ -26,7 +26,7 @@ type ChatWindowProps = {
   chat: UseChatResult;
 };
 
-type QuickReply = { label: string; icon: () => ReactElement };
+type QuickReply = { label: string; hint: string; icon: () => ReactElement };
 
 function MenuIcon() {
   return (
@@ -75,10 +75,10 @@ function CalendarIcon() {
 }
 
 const QUICK_REPLIES: QuickReply[] = [
-  { label: "See menu", icon: MenuIcon },
-  { label: "Opening hours", icon: ClockIcon },
-  { label: "Find us", icon: PinIcon },
-  { label: "Book a table", icon: CalendarIcon },
+  { label: "See menu", hint: "Starters to puddings", icon: MenuIcon },
+  { label: "Opening hours", hint: "Today & the full week", icon: ClockIcon },
+  { label: "Find us", hint: "Brindley Place, parking too", icon: PinIcon },
+  { label: "Book a table", hint: "Ring, or leave your number", icon: CalendarIcon },
 ];
 
 function CloseIcon() {
@@ -202,11 +202,15 @@ export function ChatWindow({ isOpen, onClose, chat }: ChatWindowProps) {
       className="animate-window-in fixed inset-0 z-50 flex h-[100dvh] w-full flex-col bg-surface sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[min(600px,calc(100dvh-112px))] sm:w-[380px] sm:rounded-2xl sm:border sm:border-border"
       style={{ boxShadow: "var(--shadow-window)" }}
     >
-      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-gradient-to-b from-surface to-bg/40 px-4 py-3 sm:rounded-t-2xl">
-        <div className="flex items-center gap-2.5">
-          <HannahAvatar size={40} online />
+      <header className="relative flex shrink-0 items-center justify-between gap-3 overflow-hidden border-b border-border bg-surface px-4 py-3 sm:rounded-t-2xl">
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent/[0.07] via-transparent to-accent-2/[0.06]"
+          aria-hidden="true"
+        />
+        <div className="relative flex items-center gap-2.5">
+          <HannahAvatar size={42} online className="ring-2 ring-surface shadow-[0_2px_10px_rgba(180,83,9,0.25)]" />
           <div className="flex flex-col leading-tight">
-            <span className="font-serif text-[16px] text-ink">Hannah</span>
+            <span className="font-serif text-[17px] text-ink">Hannah</span>
             <span className="flex items-center gap-1.5 text-[12px] text-muted">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent-2" aria-hidden="true" />
               Host at The Copper Larder
@@ -217,20 +221,20 @@ export function ChatWindow({ isOpen, onClose, chat }: ChatWindowProps) {
           type="button"
           onClick={onClose}
           aria-label="Close chat"
-          className="flex h-11 w-11 items-center justify-center rounded-full text-muted transition-colors duration-200 hover:bg-bg hover:text-ink"
+          className="relative flex h-11 w-11 items-center justify-center rounded-full text-muted transition-colors duration-200 hover:bg-bg hover:text-ink"
         >
           <CloseIcon />
         </button>
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4">
+      <div ref={scrollRef} className="chat-texture chat-scroll flex-1 overflow-y-auto px-4 py-4">
         <div className="flex flex-col gap-0.5">
           {messages.length === 0 && (
             <div className="mb-1 flex w-full items-end gap-2">
               <div className="w-7 shrink-0">
                 <HannahAvatar size={28} />
               </div>
-              <div className="animate-fade-up max-w-[78%] rounded-2xl rounded-bl-sm border border-border bg-surface px-4 py-2.5 text-[15px] leading-relaxed text-ink">
+              <div className="animate-fade-up max-w-[78%] rounded-2xl rounded-bl-sm border border-border bg-surface px-4 py-2.5 text-[15px] leading-relaxed text-ink shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
                 Hello, I&apos;m Hannah — ask me about the menu, opening hours, or getting a table.
               </div>
             </div>
@@ -252,42 +256,52 @@ export function ChatWindow({ isOpen, onClose, chat }: ChatWindowProps) {
       </div>
 
       {messages.length === 0 && (
-        <div className="flex shrink-0 flex-wrap gap-2 border-t border-border px-4 py-3">
-          {QUICK_REPLIES.map(({ label, icon: Icon }) => (
+        <div className="flex shrink-0 flex-wrap gap-2 border-t border-border bg-surface px-4 py-3">
+          {QUICK_REPLIES.map(({ label, hint, icon: Icon }) => (
             <button
               key={label}
               type="button"
               onClick={() => send(label)}
-              className="flex h-9 items-center gap-1.5 rounded-full border border-border bg-bg px-3.5 text-[13px] font-medium text-ink transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:text-accent hover:shadow-[0_2px_8px_rgba(180,83,9,0.15)]"
+              className="group flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-bg px-3.5 text-[13px] font-medium text-ink transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.06] hover:border-accent hover:bg-accent hover:text-white hover:shadow-[0_6px_16px_rgba(180,83,9,0.28)] active:scale-[0.97]"
             >
-              <Icon />
-              {label}
+              <span className="shrink-0 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
+                <Icon />
+              </span>
+              <span className="shrink-0">{label}</span>
+              <span className="max-w-0 overflow-hidden whitespace-nowrap text-white/85 opacity-0 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:ml-0.5 group-hover:max-w-[180px] group-hover:opacity-100">
+                · {hint}
+              </span>
             </button>
           ))}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex shrink-0 items-center gap-2 border-t border-border p-3 sm:rounded-b-2xl">
+      <form
+        onSubmit={handleSubmit}
+        className="flex shrink-0 items-center gap-2 border-t border-border bg-surface p-3 sm:rounded-b-2xl"
+      >
         <label htmlFor="cl-chat-input" className="sr-only">
           Type a message
         </label>
-        <input
-          id="cl-chat-input"
-          ref={inputRef}
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          disabled={isStreaming}
-          placeholder="Ask about the menu, hours, a table…"
-          autoComplete="off"
-          className="h-11 flex-1 rounded-full border border-border bg-bg px-4 text-[14px] text-ink placeholder:text-muted/70 outline-none transition-colors focus-visible:border-accent disabled:opacity-60"
-        />
+        <div className="flex-1 rounded-full bg-bg shadow-[inset_0_1px_2px_rgba(28,25,23,0.05)] ring-1 ring-inset ring-border transition-all duration-200 focus-within:ring-2 focus-within:ring-accent/60">
+          <input
+            id="cl-chat-input"
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            disabled={isStreaming}
+            placeholder="Ask about the menu, hours, a table…"
+            autoComplete="off"
+            className="h-11 w-full rounded-full bg-transparent px-4 text-[14px] text-ink placeholder:text-muted/70 outline-none disabled:opacity-60"
+          />
+        </div>
         <button
           type="submit"
           disabled={isStreaming || !inputValue.trim()}
           aria-label="Send message"
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-all duration-200 hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 ${
-            inputValue.trim() && !isStreaming ? "scale-100" : "scale-95"
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:bg-accent-hover hover:shadow-[0_4px_14px_rgba(180,83,9,0.35)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none ${
+            inputValue.trim() && !isStreaming ? "scale-100" : "scale-90"
           }`}
         >
           <SendIcon />

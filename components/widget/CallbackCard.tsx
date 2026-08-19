@@ -95,9 +95,21 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
     return (
       <div
         role="status"
-        className="w-full rounded-xl border border-accent-2/20 bg-accent-2/5 px-4 py-3 text-[14px] text-accent-2"
+        className="animate-success-pop flex w-full items-center gap-3 rounded-xl border border-accent-2/20 bg-accent-2/5 px-4 py-3 text-[14px] text-accent-2"
       >
-        Lovely — they&apos;ll ring you within 10 minutes.
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-2 text-white">
+          <svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true">
+            <path
+              className="animate-check-draw"
+              d="M3 8.5l3.2 3.2L13 4.5"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+        <span>Lovely — they&apos;ll ring you within 10 minutes.</span>
       </div>
     );
   }
