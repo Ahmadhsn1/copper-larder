@@ -11,6 +11,17 @@
   --border: #e7e2da;
   --shadow-window: 0 20px 50px rgba(120, 53, 15, 0.16), 0 4px 14px rgba(28, 25, 23, 0.1);
   --shadow-card: 0 1px 2px rgba(28, 25, 23, 0.04), 0 8px 24px rgba(28, 25, 23, 0.06);
+
+  /* Marketing-site editorial palette (brief §6). Additive to the tokens
+     above — the chat widget keeps its existing warm-paper look untouched. */
+  --color-charcoal: #171613;
+  --color-charcoal-soft: #211f1b;
+  --color-cream: #f2ede3;
+  --color-offwhite: #faf8f3;
+  --color-copper: #a66a43;
+  --color-copper-light: #b9825d;
+  --color-brown: #6b4a36;
+  --color-olive: #596052;
 }
 
 @theme inline {
@@ -23,7 +34,16 @@
   --color-accent-2: var(--accent-2);
   --color-border: var(--border);
   --font-sans: var(--font-inter);
-  --font-serif: var(--font-fraunces);
+  --font-serif: var(--font-display);
+
+  --color-charcoal: var(--color-charcoal);
+  --color-charcoal-soft: var(--color-charcoal-soft);
+  --color-cream: var(--color-cream);
+  --color-offwhite: var(--color-offwhite);
+  --color-copper: var(--color-copper);
+  --color-copper-light: var(--color-copper-light);
+  --color-brown: var(--color-brown);
+  --color-olive: var(--color-olive);
 }
 
 * {
@@ -31,7 +51,14 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto; /* Lenis (see components/motion/SmoothScroll.tsx) owns smoothness when active */
+}
+
+/* Applied to <html> by CustomCursor.tsx only when it's actually active
+   (fine pointer, no reduced motion) — never hides the cursor by default. */
+.cl-custom-cursor-active,
+.cl-custom-cursor-active * {
+  cursor: none !important;
 }
 
 body {
@@ -94,6 +121,49 @@ body {
 
 .animate-launcher-pop {
   animation: launcher-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes whatsapp-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 9px rgba(37, 211, 102, 0);
+  }
+}
+
+.animate-whatsapp-pulse {
+  animation: whatsapp-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes whatsapp-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(-4deg);
+  }
+}
+
+.animate-whatsapp-bob {
+  animation: whatsapp-bob 2.4s ease-in-out infinite;
+}
+
+@keyframes pill-in {
+  from {
+    opacity: 0;
+    transform: translateX(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.animate-pill-in {
+  animation: pill-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 1.1s both;
 }
 
 @keyframes fade-up {

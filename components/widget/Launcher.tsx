@@ -1,8 +1,11 @@
 "use client";
 
-// The floating trigger button. Also owns the proactive greeting bubble that
-// appears once, a few seconds after first paint, if the visitor hasn't
-// opened the chat yet this tab.
+// The floating trigger: a persistent pill-shaped button (not a bare icon —
+// it's the AI host's own call-to-action) stacked directly above the
+// WhatsApp button so the two are read as a deliberate pair, WhatsApp lowest
+// and the AI pill just above it. Also owns the proactive greeting bubble
+// that appears once, a few seconds after first paint, if the visitor
+// hasn't opened the chat yet this tab.
 
 import { useEffect, useRef, useState } from "react";
 import { getOpenStatus } from "@/lib/restaurant";
@@ -96,7 +99,7 @@ export function Launcher({ isOpen, hasOpenedOnce, onOpen, onClose }: LauncherPro
   }
 
   return (
-    <div className={`fixed bottom-6 right-6 z-40 ${isOpen ? "hidden sm:block" : "block"}`}>
+    <div className={`fixed bottom-24 right-6 z-40 ${isOpen ? "hidden sm:block" : "block"}`}>
       {greeting && !isOpen && (
         <div className="animate-fade-up absolute bottom-[calc(100%+14px)] right-0 flex w-72 items-start gap-2.5 rounded-2xl rounded-br-sm border border-border bg-surface p-3.5 pr-8 shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_rgba(28,25,23,0.06)]">
           <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-white">
@@ -124,11 +127,14 @@ export function Launcher({ isOpen, hasOpenedOnce, onOpen, onClose }: LauncherPro
         type="button"
         onClick={handleLauncherClick}
         aria-label={isOpen ? "Close chat" : "Open chat with Hannah"}
-        className={`animate-launcher-pop relative flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_rgba(28,25,23,0.06)] transition-all duration-300 hover:scale-105 hover:bg-accent-hover ${
+        className={`animate-launcher-pop relative flex items-center gap-2 rounded-full bg-accent py-3.5 pl-4 pr-5 text-white shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_rgba(28,25,23,0.1)] transition-all duration-300 hover:scale-[1.03] hover:bg-accent-hover ${
           isOpen ? "" : "animate-launcher-pulse"
         }`}
       >
-        {isOpen ? <CloseIcon /> : <SparkChatIcon />}
+        {isOpen ? <CloseIcon /> : <SparkChatIcon size={22} />}
+        <span className="text-[13px] font-medium uppercase tracking-[0.08em]">
+          {isOpen ? "Close chat" : "Chat with our AI host"}
+        </span>
 
         {!isOpen && !hasOpenedOnce && (
           <span
