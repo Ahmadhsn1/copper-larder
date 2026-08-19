@@ -6,10 +6,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getOpenStatus } from "@/lib/restaurant";
-import { HannahAvatar } from "./HannahAvatar";
 
 type LauncherProps = {
   isOpen: boolean;
+  hasOpenedOnce: boolean;
   onOpen: () => void;
   onClose: () => void;
 };
@@ -31,7 +31,27 @@ function CloseIcon() {
   );
 }
 
-export function Launcher({ isOpen, onOpen, onClose }: LauncherProps) {
+// A chat glyph with a small spark — reads as "AI host", not a generic
+// support-widget icon. Shown on the launcher before it's ever been opened;
+// Hannah's actual photo only appears once you're inside the conversation.
+function SparkChatIcon({ size = 25 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" aria-hidden="true">
+      <path
+        d="M4 5.5A2.5 2.5 0 0 1 6.5 3h8A2.5 2.5 0 0 1 17 5.5v6A2.5 2.5 0 0 1 14.5 14H10l-4 3.4V14H6.5A2.5 2.5 0 0 1 4 11.5v-6Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M18.5 8.5l.7 1.7 1.7.7-1.7.7-.7 1.7-.7-1.7-1.7-.7 1.7-.7.7-1.7Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+export function Launcher({ isOpen, hasOpenedOnce, onOpen, onClose }: LauncherProps) {
   const [greeting, setGreeting] = useState<string | null>(null);
   const isOpenRef = useRef(isOpen);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -79,7 +99,9 @@ export function Launcher({ isOpen, onOpen, onClose }: LauncherProps) {
     <div className={`fixed bottom-6 right-6 z-40 ${isOpen ? "hidden sm:block" : "block"}`}>
       {greeting && !isOpen && (
         <div className="animate-fade-up absolute bottom-[calc(100%+14px)] right-0 flex w-72 items-start gap-2.5 rounded-2xl rounded-br-sm border border-border bg-surface p-3.5 pr-8 shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_rgba(28,25,23,0.06)]">
-          <HannahAvatar size={30} className="mt-0.5" />
+          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-white">
+            <SparkChatIcon size={16} />
+          </span>
           <button
             type="button"
             onClick={() => setGreeting(null)}
@@ -102,11 +124,18 @@ export function Launcher({ isOpen, onOpen, onClose }: LauncherProps) {
         type="button"
         onClick={handleLauncherClick}
         aria-label={isOpen ? "Close chat" : "Open chat with Hannah"}
-        className={`animate-launcher-pop flex h-14 w-14 items-center justify-center rounded-full shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_rgba(28,25,23,0.06)] transition-all duration-300 hover:scale-105 ${
-          isOpen ? "bg-accent text-white hover:bg-accent-hover" : "bg-transparent"
-        } ${isOpen ? "" : "animate-launcher-pulse"}`}
+        className={`animate-launcher-pop relative flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_rgba(28,25,23,0.06)] transition-all duration-300 hover:scale-105 hover:bg-accent-hover ${
+          isOpen ? "" : "animate-launcher-pulse"
+        }`}
       >
-        {isOpen ? <CloseIcon /> : <HannahAvatar size={56} online />}
+        {isOpen ? <CloseIcon /> : <SparkChatIcon />}
+
+        {!isOpen && !hasOpenedOnce && (
+          <span
+            className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-bg bg-accent-2"
+            aria-hidden="true"
+          />
+        )}
       </button>
     </div>
   );

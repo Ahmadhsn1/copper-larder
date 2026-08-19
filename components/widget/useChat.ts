@@ -5,7 +5,7 @@
 // CallbackCard.tsx posts to /api/lead on its own — this hook does not know
 // about lead capture beyond surfacing `showCallbackCard` on a message.
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { RESTAURANT } from "@/lib/restaurant";
 
 export type ChatRole = "user" | "model";
@@ -28,6 +28,7 @@ export type UseChatResult = {
 };
 
 const SESSION_STORAGE_KEY = "cl_session_id";
+const MESSAGES_STORAGE_KEY = "cl_messages";
 const MIN_TYPING_DELAY_MS = 400;
 const NETWORK_FALLBACK_TEXT = `Sorry — I'm having trouble connecting just now. Give the team a ring on ${RESTAURANT.phone}, or try again in a moment.`;
 
@@ -46,6 +47,32 @@ function readOrCreateSessionId(): string {
   const created = createId();
   window.sessionStorage.setItem(SESSION_STORAGE_KEY, created);
   return created;
+}
+
+/**
+ * The visible transcript is persisted per-tab so a reload doesn't silently
+ * drop what the visitor can see (the server already has the real history —
+ * this just keeps the UI honest about it). Best-effort: any parse failure
+ * or malformed entry just falls back to a fresh, empty conversation.
+ */
+function readStoredMessages(): ChatMessage[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.sessionStorage.getItem(MESSAGES_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (m): m is ChatMessage =>
+        isRecord(m) &&
+        typeof m.id === "string" &&
+        (m.role === "user" || m.role === "model") &&
+        typeof m.content === "string" &&
+        typeof m.ts === "number",
+    );
+  } catch {
+    return [];
+  }
 }
 
 type ChunkData = { text: string };
@@ -118,9 +145,14 @@ function extractFrames(buffer: string): { frames: SseFrame[]; rest: string } {
 
 export function useChat(): UseChatResult {
   const [sessionId] = useState<string>(() => readOrCreateSessionId());
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => readStoredMessages());
   const [isStreaming, setIsStreaming] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(messages));
+  }, [messages]);
 
   // Always-current mirror of `messages`, so send() can read the latest
   // history without needing to recreate its identity on every message.
