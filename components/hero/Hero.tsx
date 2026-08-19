@@ -86,7 +86,10 @@ export function Hero() {
       <div className="relative z-10 mx-auto w-full max-w-7xl px-6 sm:px-10">
         <div ref={eyebrowRef} style={hiddenStyle}>
           <span className="inline-flex items-center gap-2 rounded-full border border-cream/25 bg-cream/10 px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.22em] text-cream/90 backdrop-blur-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-copper-light" aria-hidden="true" />
+            <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-copper-light opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-copper-light" />
+            </span>
             Modern British Bistro
           </span>
         </div>
