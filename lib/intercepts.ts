@@ -93,7 +93,7 @@ const RULES: Rule[] = [
   },
   {
     id: "allergies",
-    patterns: [/\ballerg(y|ies|ic)\b/, /\bcoeliac\b/, /\bceliac\b/],
+    patterns: [/\ballerg(y|ies|ic)\b/, /\bcoeliac\b/, /\bceliac\b/, /gluten.?free/, /\bnuts?\b/],
     respond: () => ({
       source: "intercept",
       id: "allergies",

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getServerSupabase } from "@/lib/supabase";
+import { getRequestIp, hashIp } from "@/lib/hash";
+import { checkAndConsumeLeadCap } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -23,6 +25,15 @@ export async function POST(req: NextRequest) {
 
   const supabase = getServerSupabase();
   const { sessionId, name, phone, preferredTime } = parsed;
+
+  const ipHash = hashIp(getRequestIp(req.headers));
+  const leadCap = await checkAndConsumeLeadCap(supabase, ipHash);
+  if (!leadCap.ok) {
+    return NextResponse.json(
+      { error: "Too many requests — give the team a ring instead: 0121 496 0180." },
+      { status: 429 }
+    );
+  }
 
   if (sessionId) {
     const { data: recent } = await supabase

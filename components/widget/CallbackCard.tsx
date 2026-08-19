@@ -4,7 +4,7 @@
 // the chat response set showCallbackCard. Owns its own submit lifecycle and
 // talks to /api/lead directly — useChat knows nothing about lead capture.
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 
 type CallbackCardProps = {
   sessionId: string;
@@ -31,6 +31,11 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
   const [status, setStatus] = useState<Status>("idle");
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [requiredError, setRequiredError] = useState<string | null>(null);
+
+  const nameRef = useRef<HTMLInputElement | null>(null);
+  const phoneRef = useRef<HTMLInputElement | null>(null);
+  const timeRef = useRef<HTMLInputElement | null>(null);
 
   const isSubmitting = status === "submitting";
   const isDone = status === "success";
@@ -60,9 +65,26 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!name.trim() || !phone.trim() || !preferredTime.trim()) return;
+    setRequiredError(null);
+
+    if (!name.trim()) {
+      setRequiredError("Name is required.");
+      nameRef.current?.focus();
+      return;
+    }
+    if (!phone.trim()) {
+      setRequiredError("Phone is required.");
+      phoneRef.current?.focus();
+      return;
+    }
+    if (!preferredTime.trim()) {
+      setRequiredError("Preferred time is required.");
+      timeRef.current?.focus();
+      return;
+    }
     if (!isPlausiblePhone(phone.trim())) {
       setPhoneError("That doesn't quite look like a phone number.");
+      phoneRef.current?.focus();
       return;
     }
     setPhoneError(null);
@@ -71,7 +93,10 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
 
   if (isDone) {
     return (
-      <div className="w-full max-w-[85%] rounded-xl border border-accent-2/20 bg-accent-2/5 px-4 py-3 text-[14px] text-accent-2">
+      <div
+        role="status"
+        className="w-full max-w-[85%] rounded-xl border border-accent-2/20 bg-accent-2/5 px-4 py-3 text-[14px] text-accent-2"
+      >
         Lovely — they&apos;ll ring you within 10 minutes.
       </div>
     );
@@ -92,10 +117,14 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
           </label>
           <input
             id="cb-name"
+            ref={nameRef}
             type="text"
             required
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (requiredError) setRequiredError(null);
+            }}
             disabled={isSubmitting}
             className="h-11 rounded-lg border border-border bg-bg px-3 text-[14px] text-ink outline-none focus-visible:border-accent disabled:opacity-60"
             autoComplete="name"
@@ -108,12 +137,14 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
           </label>
           <input
             id="cb-phone"
+            ref={phoneRef}
             type="tel"
             required
             value={phone}
             onChange={(e) => {
               setPhone(e.target.value);
               if (phoneError) setPhoneError(null);
+              if (requiredError) setRequiredError(null);
             }}
             disabled={isSubmitting}
             className="h-11 rounded-lg border border-border bg-bg px-3 text-[14px] text-ink outline-none focus-visible:border-accent disabled:opacity-60"
@@ -134,15 +165,25 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
           </label>
           <input
             id="cb-time"
+            ref={timeRef}
             type="text"
             required
             placeholder="e.g. this evening, after 6"
             value={preferredTime}
-            onChange={(e) => setPreferredTime(e.target.value)}
+            onChange={(e) => {
+              setPreferredTime(e.target.value);
+              if (requiredError) setRequiredError(null);
+            }}
             disabled={isSubmitting}
             className="h-11 rounded-lg border border-border bg-bg px-3 text-[14px] text-ink placeholder:text-muted/60 outline-none focus-visible:border-accent disabled:opacity-60"
           />
         </div>
+
+        {requiredError && (
+          <p role="alert" className="text-[12px] text-red-700">
+            {requiredError}
+          </p>
+        )}
 
         {submitError && (
           <p role="alert" className="text-[12px] text-red-700">

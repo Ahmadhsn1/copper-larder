@@ -87,7 +87,7 @@ export type Database = {
       rate_limit_counters: {
         Row: {
           id: string;
-          scope: "ip" | "global";
+          scope: "ip" | "global" | "lead_ip";
           scope_key: string;
           day: string;
           count: number;
@@ -95,7 +95,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          scope: "ip" | "global";
+          scope: "ip" | "global" | "lead_ip";
           scope_key: string;
           day?: string;
           count?: number;

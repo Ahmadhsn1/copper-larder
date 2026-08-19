@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { getServerSupabase } from "@/lib/supabase";
-import { RESTAURANT } from "@/lib/restaurant";
+import { RESTAURANT, getLondonDayStartUTC } from "@/lib/restaurant";
 import LiveRefresh from "@/components/dashboard/LiveRefresh";
 import type { Database } from "@/lib/database.types";
 
@@ -112,10 +112,7 @@ function extractLastUserMessage(messages: Database["public"]["Tables"]["conversa
 export default async function DashboardPage() {
   const supabase = getServerSupabase();
 
-  const now = new Date();
-  const startOfTodayUTC = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-  ).toISOString();
+  const startOfTodayUTC = getLondonDayStartUTC().toISOString();
 
   const [
     totalConversationsRes,

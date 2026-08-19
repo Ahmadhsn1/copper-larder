@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# The Copper Larder — AI Host Demo
 
-## Getting Started
+A demo AI chat widget ("Hannah") for a fictional Birmingham bistro, built to show a restaurant owner what an
+AI host on their own site could feel like. Full spec: [`CopperLarderSpec.md`](./CopperLarderSpec.md).
 
-First, run the development server:
+## Stack
+
+- Next.js 16 (App Router) + React 19 + TypeScript, Tailwind v4
+- Gemini 2.0 Flash via `@google/genai`, streamed over SSE
+- Supabase (Postgres) — `conversations`, `leads`, `cache`, `rate_limit_counters`, all RLS-locked to the
+  service-role key only
+
+## Local setup
 
 ```bash
+npm install
+cp .env.example .env.local   # fill in the values below
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Required env vars (see `.env.example`):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Var | Where to get it |
+|---|---|
+| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project → Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase project → Settings → API (anon/publishable key) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase project → Settings → API keys → Legacy anon/service_role keys (**required** — every table has RLS enabled with no policies, so the app cannot read or write anything without this key; without it `/api/chat` and `/api/lead` fail closed with a graceful fallback message) |
+| `IP_HASH_SALT` | any random string — used to salt-hash requester IPs before they're stored |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Structure
 
-## Learn More
+```
+app/page.tsx                  landing page (hero, menu, about, reviews, footer)
+app/demo/dashboard/page.tsx   internal sales dashboard — unauthenticated, direct-URL only
+app/api/chat/route.ts         chat pipeline: caps → complaint detection → intercepts → cache → Gemini
+app/api/lead/route.ts         callback-request capture
+components/widget/            the floating chat widget (Launcher, ChatWindow, Message, CallbackCard, useChat)
+components/landing/           landing page sections
+components/dashboard/         dashboard's live-refresh wrapper
+lib/                          restaurant data, system prompt, intercepts, rate limiting, cache, Supabase clients
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Notes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `/demo/dashboard` is intentionally unauthenticated — reachable only if you know the URL, not linked from
+  any nav. Fine for a sales demo; add real auth before this goes anywhere public.
+- This repo is **private** and its `.env.local` is committed intentionally (owner's request, for convenience).
+  If it's ever made public, rotate every key in it first.

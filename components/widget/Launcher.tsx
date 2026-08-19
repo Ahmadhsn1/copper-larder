@@ -46,9 +46,21 @@ function CloseIcon() {
 export function Launcher({ isOpen, onOpen, onClose }: LauncherProps) {
   const [greeting, setGreeting] = useState<string | null>(null);
   const isOpenRef = useRef(isOpen);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const wasOpenRef = useRef(isOpen);
 
   useEffect(() => {
     isOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  // Restore keyboard focus to the launcher when the dialog closes (Escape or
+  // its own close button unmounts the previously-focused input entirely) —
+  // skip the very first render so this never steals focus on page load.
+  useEffect(() => {
+    if (wasOpenRef.current && !isOpen) {
+      buttonRef.current?.focus();
+    }
+    wasOpenRef.current = isOpen;
   }, [isOpen]);
 
   useEffect(() => {
@@ -96,6 +108,7 @@ export function Launcher({ isOpen, onOpen, onClose }: LauncherProps) {
       )}
 
       <button
+        ref={buttonRef}
         type="button"
         onClick={handleLauncherClick}
         aria-label={isOpen ? "Close chat" : "Open chat with Hannah"}

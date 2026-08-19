@@ -7,6 +7,7 @@ import { matchIntercept, matchComplaint, COMPLAINT_RESPONSE } from "@/lib/interc
 import { getRequestIp, hashIp, hashQuestion } from "@/lib/hash";
 import { upsertCache, computeShowCallbackCard } from "@/lib/cache";
 import { isSessionCapped, checkAndConsumeUsageCaps } from "@/lib/rate-limit";
+import { detectDietaryLock } from "@/lib/dietary";
 import type { ChatMessage } from "@/lib/database.types";
 
 export const runtime = "nodejs";
@@ -15,7 +16,7 @@ const bodySchema = z.object({
   sessionId: z.string().min(1).max(200),
   message: z.string().min(1).max(500),
   history: z
-    .array(z.object({ role: z.enum(["user", "model"]), content: z.string() }))
+    .array(z.object({ role: z.enum(["user", "model"]), content: z.string().max(2000) }))
     .max(100)
     .optional()
     .default([]),
@@ -183,11 +184,17 @@ export async function POST(req: NextRequest) {
           { role: "user" as const, parts: [{ text: message }] },
         ];
 
+        // Dietary lock (spec §6) — scan the *full* transcript the client has
+        // sent us, not just the last-6 window used for the Gemini call, so a
+        // "vegan"/"gluten free" mention early in a long conversation still
+        // holds once that message ages out of the model's context.
+        const dietaryLock = detectDietaryLock([...history.map((h) => h.content), message]);
+
         const result = await ai.models.generateContentStream({
           model: "gemini-2.0-flash",
           contents,
           config: {
-            systemInstruction: buildSystemPrompt(),
+            systemInstruction: buildSystemPrompt(dietaryLock),
             maxOutputTokens: 300,
             temperature: 0.7,
           },
@@ -202,19 +209,35 @@ export async function POST(req: NextRequest) {
           }
         }
 
+        let hadAvailabilityViolation = false;
+
         if (!fullText.trim()) {
           fullText = FALLBACK_MESSAGE;
-        } else if (ALLERGY_REGEX.test(message) && !ALLERGY_REGEX.test(fullText)) {
-          fullText += ALLERGY_DISCLAIMER;
-          send("chunk", { text: ALLERGY_DISCLAIMER });
-        }
+        } else {
+          if (ALLERGY_REGEX.test(message) && !ALLERGY_REGEX.test(fullText)) {
+            fullText += ALLERGY_DISCLAIMER;
+            send("chunk", { text: ALLERGY_DISCLAIMER });
+          }
 
-        if (AVAILABILITY_CONFIRM_REGEX.test(fullText)) {
-          console.warn("[guardrail] possible availability confirmation in response:", fullText);
+          // Hard guardrail: never confirm availability. Detection alone isn't
+          // enforcement — actively correct the reply the same way the allergy
+          // disclaimer does, rather than just logging the violation.
+          hadAvailabilityViolation = AVAILABILITY_CONFIRM_REGEX.test(fullText);
+          if (hadAvailabilityViolation) {
+            console.warn("[guardrail] availability confirmation caught and corrected:", fullText);
+            const correction =
+              " Just to be clear — I can't confirm bookings here. Ring the team on 0121 496 0180 to lock in a table.";
+            fullText += correction;
+            send("chunk", { text: correction });
+          }
         }
 
         await persistTurn(fullText);
-        if (cacheEligible) {
+        // Never cache a response that tripped the availability guardrail —
+        // an exact-match cache entry is served verbatim to every future
+        // visitor, so a bad answer here would be a persistent, site-wide
+        // problem rather than a one-off.
+        if (cacheEligible && !hadAvailabilityViolation) {
           await upsertCache(supabase, message, fullText, "llm");
         }
 

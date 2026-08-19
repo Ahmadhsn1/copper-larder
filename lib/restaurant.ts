@@ -146,3 +146,45 @@ export function getOpenStatus(date: Date = new Date()): OpenStatus {
   if (!today || hour < today.open || hour >= today.close) return "closed";
   return hour < 17 ? "lunch" : "evening";
 }
+
+/**
+ * Start of the current calendar day in Europe/London (i.e. real local
+ * midnight, correct across the BST/GMT transition), returned as the
+ * equivalent UTC instant — for querying rows by a UTC timestamptz column
+ * using the restaurant's actual local day boundary rather than UTC's.
+ */
+export function getLondonDayStartUTC(date: Date = new Date()): Date {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/London",
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+    .formatToParts(date)
+    .reduce<Record<string, string>>((acc, p) => {
+      acc[p.type] = p.value;
+      return acc;
+    }, {});
+
+  const asIfUTC = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second),
+  );
+  const offsetMs = asIfUTC - date.getTime();
+
+  const londonLocal = new Date(date.getTime() + offsetMs);
+  const startOfDayAsIfUTC = Date.UTC(
+    londonLocal.getUTCFullYear(),
+    londonLocal.getUTCMonth(),
+    londonLocal.getUTCDate(),
+  );
+  return new Date(startOfDayAsIfUTC - offsetMs);
+}

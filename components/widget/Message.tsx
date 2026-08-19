@@ -32,7 +32,11 @@ export function Message({ message, isStreaming = false, children }: MessageProps
           {isUser ? (
             <span className="whitespace-pre-wrap break-words">{message.content}</span>
           ) : (
-            <span aria-live="polite" className="whitespace-pre-wrap break-words">
+            <span
+              aria-live={isStreaming ? "off" : "polite"}
+              aria-busy={isStreaming || undefined}
+              className="whitespace-pre-wrap break-words"
+            >
               {message.content}
               {isStreaming && (
                 <span

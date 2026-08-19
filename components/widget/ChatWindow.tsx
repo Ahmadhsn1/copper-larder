@@ -5,7 +5,7 @@
 // a fresh conversation, and the pinned input row. Purely presentational over
 // the state `useChat` already owns — Widget.tsx wires the two together.
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Message } from "./Message";
 import { CallbackCard } from "./CallbackCard";
 import type { UseChatResult } from "./useChat";
@@ -61,6 +61,7 @@ export function ChatWindow({ isOpen, onClose, chat }: ChatWindowProps) {
   const [inputValue, setInputValue] = useState("");
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -81,6 +82,27 @@ export function ChatWindow({ isOpen, onClose, chat }: ChatWindowProps) {
     return () => window.removeEventListener("keydown", handleEscape);
   }, [isOpen, onClose]);
 
+  // Minimal focus trap: the dialog declares role="dialog" aria-modal="true",
+  // so keyboard focus must not leak into the page behind it on Tab/Shift+Tab.
+  const handleTrapTab = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Tab") return;
+    const root = dialogRef.current;
+    if (!root) return;
+    const focusable = root.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }, []);
+
   if (!isOpen) return null;
 
   const lastMessage = messages[messages.length - 1];
@@ -96,10 +118,12 @@ export function ChatWindow({ isOpen, onClose, chat }: ChatWindowProps) {
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label="Chat with Hannah, The Copper Larder"
-      className="animate-window-in fixed inset-0 z-50 flex h-[100dvh] w-full flex-col bg-surface sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[600px] sm:w-[380px] sm:rounded-2xl sm:border sm:border-border"
+      onKeyDown={handleTrapTab}
+      className="animate-window-in fixed inset-0 z-50 flex h-[100dvh] w-full flex-col bg-surface sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[min(600px,calc(100dvh-112px))] sm:w-[380px] sm:rounded-2xl sm:border sm:border-border"
       style={{ boxShadow: "var(--shadow-window)" }}
     >
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3 sm:rounded-t-2xl">
