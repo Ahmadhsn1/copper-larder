@@ -32,10 +32,10 @@ export function WhatsAppButton({ hidden }: { hidden: boolean }) {
         <span className="animate-whatsapp-bob flex">
           <WhatsAppIcon />
         </span>
-        <span
-          className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-bg bg-[#25D366]"
-          aria-hidden="true"
-        />
+        <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3" aria-hidden="true">
+          <span className="absolute inset-0 animate-ping rounded-full bg-[#25D366] opacity-75" />
+          <span className="relative h-3 w-3 rounded-full border-2 border-bg bg-[#25D366]" />
+        </span>
       </a>
     </div>
   );

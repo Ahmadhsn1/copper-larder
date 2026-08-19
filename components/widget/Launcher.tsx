@@ -137,10 +137,10 @@ export function Launcher({ isOpen, hasOpenedOnce, onOpen, onClose }: LauncherPro
         </span>
 
         {!isOpen && !hasOpenedOnce && (
-          <span
-            className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-bg bg-accent-2"
-            aria-hidden="true"
-          />
+          <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5" aria-hidden="true">
+            <span className="absolute inset-0 animate-ping rounded-full bg-accent-2 opacity-75" />
+            <span className="relative h-3.5 w-3.5 rounded-full border-2 border-bg bg-accent-2" />
+          </span>
         )}
       </button>
     </div>
