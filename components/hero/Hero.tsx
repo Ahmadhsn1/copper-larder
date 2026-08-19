@@ -1,11 +1,21 @@
 "use client";
 
-// The cinematic hero — full-bleed photo, bottom-anchored editorial content,
-// and a single GSAP entrance timeline that runs once on mount (brief §10).
-// This is above the fold, so it is deliberately NOT scroll-triggered: no
-// Reveal/ImageReveal here, just a dedicated timeline built from refs on the
-// elements below. Under reduced motion the whole effect is skipped and
-// every element renders in its settled, fully visible state immediately.
+// The cinematic hero — full-bleed photo, vertically centered editorial
+// content, and a single GSAP entrance timeline that runs once on mount
+// (brief §10). This is above the fold, so it is deliberately NOT
+// scroll-triggered: no Reveal/ImageReveal here, just a dedicated timeline
+// built from refs on the elements below. Under reduced motion the whole
+// effect is skipped and every element renders in its settled, fully
+// visible state immediately.
+//
+// Centered rather than bottom-pinned: bottom-anchoring reads as a large
+// dead void above the text on anything taller than a phone, and on short
+// windows it can push content up under the fixed navbar or off the bottom
+// edge entirely. Centering distributes the negative space evenly (reads as
+// intentional, not empty) and keeps the same safety margin on both edges.
+// The heading is additionally capped with a vh-aware min() so three stacked
+// lines can never consume more than roughly a third of the viewport's
+// height, however short the window gets.
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
@@ -69,18 +79,11 @@ export function Hero() {
   return (
     <section
       aria-labelledby="hero-heading"
-      className="relative flex h-dvh min-h-[640px] w-full flex-col overflow-hidden bg-charcoal pt-28 sm:pt-32"
+      className="relative flex h-dvh min-h-[560px] w-full flex-col items-stretch justify-center overflow-hidden bg-charcoal pt-16 sm:pt-20"
     >
       <HeroBackground wrapperRef={bgWrapperRef} imageRef={bgImageRef} />
 
-      {/* Absorbs slack so the content block below stays bottom-anchored in
-          the common case, but can never push the eyebrow above the pt-28/32
-          safe zone reserved for the floating navbar — unlike justify-end,
-          a shrink-to-zero spacer can't force content to overflow upward
-          past the section's top on short viewports. */}
-      <div className="min-h-0 flex-1" aria-hidden="true" />
-
-      <div className="relative z-10 mx-auto w-full max-w-7xl shrink-0 px-6 pb-16 sm:px-10 sm:pb-20 md:pb-24">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 sm:px-10">
         <div ref={eyebrowRef} style={hiddenStyle}>
           <span className="inline-flex items-center gap-2 rounded-full border border-cream/25 bg-cream/10 px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.22em] text-cream/90 backdrop-blur-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-copper-light" aria-hidden="true" />
@@ -90,7 +93,7 @@ export function Hero() {
 
         <h1
           id="hero-heading"
-          className="mt-5 font-serif uppercase leading-[0.86] tracking-tight text-cream text-[17vw] sm:text-[14vw] md:text-[10.5vw] lg:text-[8.5vw] xl:text-[128px]"
+          className="mt-5 font-serif uppercase leading-[0.86] tracking-tight text-cream text-[min(17vw,15vh)] sm:text-[min(14vw,14vh)] md:text-[min(10.5vw,13vh)] lg:text-[min(8.5vw,12vh)] xl:text-[min(128px,12vh)]"
         >
           <span className="block overflow-hidden">
             <span ref={line1Ref} className="block" style={hiddenLineStyle}>
@@ -122,7 +125,7 @@ export function Hero() {
           </p>
         </div>
 
-        <div className="mt-10 flex flex-wrap items-center gap-4 sm:mt-12">
+        <div className="mt-10 flex flex-wrap items-center gap-4 pb-8 sm:mt-12">
           <div ref={ctaPrimaryRef} style={hiddenStyle}>
             <MagneticButton
               onClick={openBookingChat}
