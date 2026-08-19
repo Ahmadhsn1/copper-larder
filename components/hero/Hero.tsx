@@ -13,7 +13,6 @@ import { RESTAURANT } from "@/lib/restaurant";
 import { scrollToSection } from "@/lib/scrollTo";
 import { openBookingChat } from "@/lib/openChat";
 import { useReducedMotion } from "@/lib/useReducedMotion";
-import { SectionLabel } from "@/components/ui/SectionLabel";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import { HeroBackground } from "./HeroBackground";
 import { ScrollIndicator } from "./ScrollIndicator";
@@ -70,13 +69,23 @@ export function Hero() {
   return (
     <section
       aria-labelledby="hero-heading"
-      className="relative flex h-dvh min-h-[640px] w-full flex-col justify-end overflow-hidden bg-charcoal"
+      className="relative flex h-dvh min-h-[640px] w-full flex-col overflow-hidden bg-charcoal pt-28 sm:pt-32"
     >
       <HeroBackground wrapperRef={bgWrapperRef} imageRef={bgImageRef} />
 
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-16 sm:px-10 sm:pb-20 md:pb-24">
+      {/* Absorbs slack so the content block below stays bottom-anchored in
+          the common case, but can never push the eyebrow above the pt-28/32
+          safe zone reserved for the floating navbar — unlike justify-end,
+          a shrink-to-zero spacer can't force content to overflow upward
+          past the section's top on short viewports. */}
+      <div className="min-h-0 flex-1" aria-hidden="true" />
+
+      <div className="relative z-10 mx-auto w-full max-w-7xl shrink-0 px-6 pb-16 sm:px-10 sm:pb-20 md:pb-24">
         <div ref={eyebrowRef} style={hiddenStyle}>
-          <SectionLabel tone="cream">MODERN BRITISH BISTRO</SectionLabel>
+          <span className="inline-flex items-center gap-2 rounded-full border border-cream/25 bg-cream/10 px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.22em] text-cream/90 backdrop-blur-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-copper-light" aria-hidden="true" />
+            Modern British Bistro
+          </span>
         </div>
 
         <h1
