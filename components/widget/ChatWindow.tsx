@@ -257,20 +257,15 @@ export function ChatWindow({ isOpen, onClose, chat }: ChatWindowProps) {
 
       {messages.length === 0 && (
         <div className="flex shrink-0 flex-wrap gap-2 border-t border-border bg-surface px-4 py-3">
-          {QUICK_REPLIES.map(({ label, hint, icon: Icon }) => (
+          {QUICK_REPLIES.map(({ label, icon: Icon }) => (
             <button
               key={label}
               type="button"
               onClick={() => send(label)}
-              className="group flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-bg px-3.5 text-[13px] font-medium text-ink transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.06] hover:border-accent hover:bg-accent hover:text-white hover:shadow-[0_6px_16px_rgba(180,83,9,0.28)] active:scale-[0.97]"
+              className="flex h-9 items-center gap-1.5 rounded-full border border-border bg-bg px-3.5 text-[13px] font-medium text-ink transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:text-accent hover:shadow-[0_2px_8px_rgba(180,83,9,0.15)]"
             >
-              <span className="shrink-0 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
-                <Icon />
-              </span>
-              <span className="shrink-0">{label}</span>
-              <span className="max-w-0 overflow-hidden whitespace-nowrap text-white/85 opacity-0 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:ml-0.5 group-hover:max-w-[180px] group-hover:opacity-100">
-                · {hint}
-              </span>
+              <Icon />
+              {label}
             </button>
           ))}
         </div>
