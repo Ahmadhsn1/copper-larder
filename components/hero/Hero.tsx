@@ -27,29 +27,52 @@ import { MagneticButton } from "@/components/ui/MagneticButton";
 import { HeroBackground } from "./HeroBackground";
 import { ScrollIndicator } from "./ScrollIndicator";
 
-// Small thin-line flame + rosemary sprig flourish, pulled from the
-// reference mockup — sits inline within the tagline, echoing "a bit of
-// fire" without being a literal food photo.
+// BBQ grill + flame + rosemary sprig flourish, matching the reference
+// mockup's centre ornament — sits between the two flanking halves of the
+// tagline, echoing "a bit of fire" without being a literal food photo.
 function FireSprigOrnament() {
   return (
     <svg
-      viewBox="0 0 40 32"
-      width="30"
-      height="24"
+      viewBox="0 0 44 40"
+      width="72"
+      height="65"
       fill="none"
       aria-hidden="true"
       className="inline-block shrink-0 align-middle text-copper-light"
     >
+      {/* grill bowl */}
       <path
-        d="M13 30c-4.5 0-8-3.2-8-7.6 0-3.6 2.2-5.6 3-8.4.6 1.6 1.8 2.6 1.8 2.6-.6-3.4.4-6.6 3.4-9.2-.4 2.6.6 4 1.8 5 1.4-1.6 3.6-2 3.6-2-1.8 2-1.6 4-.6 5.6 1-.6 1.6-1.6 1.6-1.6.8 1.4 1.4 3 1.4 4.8 0 5.7-3.8 10.8-8 10.8Z"
+        d="M8 22.5c0 5 6.3 8.5 14 8.5s14-3.5 14-8.5"
         stroke="currentColor"
         strokeWidth="1.3"
-        strokeLinejoin="round"
+        strokeLinecap="round"
       />
+      <path d="M8 22.5h28" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      {/* crossed legs */}
       <path
-        d="M23 27c3-1 6.5-3 8.5-6M26 22c2-.6 4.5-2 6-4M29 17.5c1.4-.4 3-1.4 4-2.8"
+        d="M13 24.5 9 37M31 24.5l4 12.5M17 24.5l-3 12.5M27 24.5l3 12.5"
         stroke="currentColor"
         strokeWidth="1.1"
+        strokeLinecap="round"
+      />
+      {/* flame rising from the grill */}
+      <path
+        d="M21 21c-3-3-4-6.5-2-10.5.4 2 1.6 2.8 2.6 1.8.6 3 2.4 4 3.8 2.4.4 2.6-.6 4.4-2.4 5.6-.6.4-1.2.7-2 .7Z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+      {/* rosemary sprig */}
+      <path
+        d="M27 18c3.5-3 6.5-5 10-6.5"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        strokeLinecap="round"
+      />
+      <path
+        d="M29.5 16.2l2-2.4M32 14l2-2.6M34.5 11.8l2-2.4"
+        stroke="currentColor"
+        strokeWidth="1"
         strokeLinecap="round"
       />
     </svg>
@@ -125,10 +148,11 @@ export function Hero() {
         <h1
           id="hero-heading"
           ref={taglineRef}
-          className="mt-5 max-w-3xl font-serif text-cream text-[min(9vw,7vh)] leading-[1.12] sm:text-[min(6.5vw,6.5vh)] md:text-[min(4.6vw,6vh)] lg:text-[min(3.6vw,5.5vh)]"
+          className="mt-5 flex max-w-4xl flex-wrap items-center justify-center gap-x-4 gap-y-3 font-serif text-cream text-[min(8vw,6.5vh)] leading-[1.18] sm:gap-x-5 sm:text-[min(5.6vw,6vh)] md:text-[min(4vw,5.5vh)] lg:text-[min(3.1vw,5vh)]"
         >
-          Proper British cooking, done with a bit of care,{" "}
-          <FireSprigOrnament /> a bit of fire, and no fuss about it.
+          <span className="max-w-[20ch] text-right">Proper British cooking, done with a bit of care,</span>
+          <FireSprigOrnament />
+          <span className="max-w-[17ch] text-left">a bit of fire, and no fuss about it.</span>
         </h1>
 
         <p
