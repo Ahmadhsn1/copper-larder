@@ -95,7 +95,7 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
     return (
       <div
         role="status"
-        className="w-full max-w-[85%] rounded-xl border border-accent-2/20 bg-accent-2/5 px-4 py-3 text-[14px] text-accent-2"
+        className="w-full rounded-xl border border-accent-2/20 bg-accent-2/5 px-4 py-3 text-[14px] text-accent-2"
       >
         Lovely — they&apos;ll ring you within 10 minutes.
       </div>
@@ -105,7 +105,7 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full max-w-[85%] rounded-xl border border-border bg-surface p-4 shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_rgba(28,25,23,0.06)]"
+      className="w-full rounded-xl border border-border bg-surface p-4 shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_rgba(28,25,23,0.06)]"
       noValidate
     >
       <p className="mb-3 font-serif text-[15px] text-ink">Get a call back</p>

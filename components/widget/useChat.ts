@@ -16,6 +16,7 @@ export type ChatMessage = {
   content: string;
   showCallbackCard?: boolean;
   cached?: boolean;
+  ts: number;
 };
 
 export type UseChatResult = {
@@ -135,7 +136,7 @@ export function useChat(): UseChatResult {
 
       streamingRef.current = true;
       const priorMessages = messagesRef.current;
-      const userMessage: ChatMessage = { id: createId(), role: "user", content: text };
+      const userMessage: ChatMessage = { id: createId(), role: "user", content: text, ts: Date.now() };
       const assistantId = createId();
 
       setMessages((prev) => [...prev, userMessage]);
@@ -161,7 +162,10 @@ export function useChat(): UseChatResult {
           if (!timerFired) return;
           if (!firstContentArrived && !doneData && !errorData) return;
           gateOpened = true;
-          setMessages((prev) => [...prev, { id: assistantId, role: "model", content: bufferedText }]);
+          setMessages((prev) => [
+            ...prev,
+            { id: assistantId, role: "model", content: bufferedText, ts: Date.now() },
+          ]);
         } else {
           setMessages((prev) =>
             prev.map((m) => (m.id === assistantId ? { ...m, content: bufferedText } : m)),

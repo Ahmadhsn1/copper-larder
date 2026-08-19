@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getOpenStatus } from "@/lib/restaurant";
+import { HannahAvatar } from "./HannahAvatar";
 
 type LauncherProps = {
   isOpen: boolean;
@@ -21,19 +22,6 @@ const GREETING_COPY: Record<ReturnType<typeof getOpenStatus>, string> = {
   evening: "Evening \u{1F44B} After the menu, or planning a visit?",
   closed: "We're closed right now, but happy to help you plan a visit \u{1F44B}",
 };
-
-function ChatBubbleIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
-      <path
-        d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8A2.5 2.5 0 0 1 17.5 16H10l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 13.5v-8Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 function CloseIcon() {
   return (
@@ -90,7 +78,8 @@ export function Launcher({ isOpen, onOpen, onClose }: LauncherProps) {
   return (
     <div className={`fixed bottom-6 right-6 z-40 ${isOpen ? "hidden sm:block" : "block"}`}>
       {greeting && !isOpen && (
-        <div className="animate-fade-up absolute bottom-[calc(100%+12px)] right-0 w-64 rounded-2xl rounded-br-sm border border-border bg-surface p-3.5 pr-8 text-[14px] leading-snug text-ink shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_rgba(28,25,23,0.06)]">
+        <div className="animate-fade-up absolute bottom-[calc(100%+14px)] right-0 flex w-72 items-start gap-2.5 rounded-2xl rounded-br-sm border border-border bg-surface p-3.5 pr-8 shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_rgba(28,25,23,0.06)]">
+          <HannahAvatar size={30} className="mt-0.5" />
           <button
             type="button"
             onClick={() => setGreeting(null)}
@@ -101,8 +90,9 @@ export function Launcher({ isOpen, onOpen, onClose }: LauncherProps) {
               <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
-          <button type="button" onClick={handleGreetingOpen} className="block w-full text-left">
-            {greeting}
+          <button type="button" onClick={handleGreetingOpen} className="block flex-1 pt-0.5 text-left">
+            <span className="mb-0.5 block font-serif text-[13px] text-accent">Hannah</span>
+            <span className="block text-[14px] leading-snug text-ink">{greeting}</span>
           </button>
         </div>
       )}
@@ -112,11 +102,11 @@ export function Launcher({ isOpen, onOpen, onClose }: LauncherProps) {
         type="button"
         onClick={handleLauncherClick}
         aria-label={isOpen ? "Close chat" : "Open chat with Hannah"}
-        className={`flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_rgba(28,25,23,0.06)] transition-all duration-300 hover:scale-105 hover:bg-accent-hover ${
-          isOpen ? "" : "animate-launcher-pulse"
-        }`}
+        className={`animate-launcher-pop flex h-14 w-14 items-center justify-center rounded-full shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_rgba(28,25,23,0.06)] transition-all duration-300 hover:scale-105 ${
+          isOpen ? "bg-accent text-white hover:bg-accent-hover" : "bg-transparent"
+        } ${isOpen ? "" : "animate-launcher-pulse"}`}
       >
-        {isOpen ? <CloseIcon /> : <ChatBubbleIcon />}
+        {isOpen ? <CloseIcon /> : <HannahAvatar size={56} online />}
       </button>
     </div>
   );
