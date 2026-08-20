@@ -40,7 +40,7 @@ export function HannahAvatar({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/hannah-avatar.jpg"
+          src="/hannah-avatar.png"
           alt=""
           width={size}
           height={size}
