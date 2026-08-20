@@ -5,6 +5,7 @@
 // talks to /api/lead directly — useChat knows nothing about lead capture.
 
 import { useRef, useState, type FormEvent } from "react";
+import { track } from "@/lib/analytics";
 
 type CallbackCardProps = {
   sessionId: string;
@@ -65,6 +66,7 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    track("booking_clicked", { sessionId });
     setRequiredError(null);
 
     if (!name.trim()) {
@@ -95,9 +97,9 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
     return (
       <div
         role="status"
-        className="animate-success-pop flex w-full items-center gap-3 rounded-xl border border-accent-2/20 bg-accent-2/5 px-4 py-3 text-[14px] text-accent-2"
+        className="animate-success-pop flex w-full items-center gap-3 rounded-lg border border-copper-light/20 bg-copper-light/5 px-4 py-3 text-[14px] text-copper-light"
       >
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-2 text-white">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-copper-light text-cream">
           <svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true">
             <path
               className="animate-check-draw"
@@ -117,14 +119,14 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full rounded-xl border border-border bg-surface p-4 shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_rgba(28,25,23,0.06)]"
+      className="w-full rounded-lg border border-charcoal/15 bg-offwhite p-4 shadow-[0_1px_2px_rgba(23,22,19,0.04),0_8px_20px_rgba(23,22,19,0.06)]"
       noValidate
     >
-      <p className="mb-3 font-serif text-[15px] text-ink">Get a call back</p>
+      <p className="mb-3 font-serif text-[15px] text-charcoal">Have the team call you</p>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label htmlFor="cb-name" className="text-[12px] font-medium text-muted">
+          <label htmlFor="cb-name" className="text-[12px] font-medium text-charcoal/60">
             Name
           </label>
           <input
@@ -138,13 +140,13 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
               if (requiredError) setRequiredError(null);
             }}
             disabled={isSubmitting}
-            className="h-11 rounded-lg border border-border bg-bg px-3 text-[14px] text-ink outline-none focus-visible:border-accent disabled:opacity-60"
+            className="h-11 rounded-lg border border-charcoal/15 bg-cream px-3 text-[14px] text-charcoal outline-none focus-visible:border-copper disabled:opacity-60"
             autoComplete="name"
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <label htmlFor="cb-phone" className="text-[12px] font-medium text-muted">
+          <label htmlFor="cb-phone" className="text-[12px] font-medium text-charcoal/60">
             Phone
           </label>
           <input
@@ -159,7 +161,7 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
               if (requiredError) setRequiredError(null);
             }}
             disabled={isSubmitting}
-            className="h-11 rounded-lg border border-border bg-bg px-3 text-[14px] text-ink outline-none focus-visible:border-accent disabled:opacity-60"
+            className="h-11 rounded-lg border border-charcoal/15 bg-cream px-3 text-[14px] text-charcoal outline-none focus-visible:border-copper disabled:opacity-60"
             autoComplete="tel"
             aria-invalid={phoneError ? true : undefined}
             aria-describedby={phoneError ? "cb-phone-error" : undefined}
@@ -172,7 +174,7 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label htmlFor="cb-time" className="text-[12px] font-medium text-muted">
+          <label htmlFor="cb-time" className="text-[12px] font-medium text-charcoal/60">
             Preferred time
           </label>
           <input
@@ -187,7 +189,7 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
               if (requiredError) setRequiredError(null);
             }}
             disabled={isSubmitting}
-            className="h-11 rounded-lg border border-border bg-bg px-3 text-[14px] text-ink placeholder:text-muted/60 outline-none focus-visible:border-accent disabled:opacity-60"
+            className="h-11 rounded-lg border border-charcoal/15 bg-cream px-3 text-[14px] text-charcoal placeholder:text-charcoal/40 outline-none focus-visible:border-copper disabled:opacity-60"
           />
         </div>
 
@@ -206,7 +208,7 @@ export function CallbackCard({ sessionId }: CallbackCardProps) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="h-11 rounded-lg bg-accent text-[14px] font-medium text-white transition-colors duration-200 hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-70"
+          className="h-11 rounded-lg bg-copper text-[14px] font-medium text-cream transition-colors duration-200 hover:bg-brown disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isSubmitting ? "Sending…" : status === "error" ? "Try again" : "Request a call back"}
         </button>

@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RESTAURANT } from "@/lib/restaurant";
+import type { QuickAction, RichCard } from "@/lib/quickActions";
 
 export type ChatRole = "user" | "model";
 
@@ -16,6 +17,8 @@ export type ChatMessage = {
   content: string;
   showCallbackCard?: boolean;
   cached?: boolean;
+  quickActions?: QuickAction[];
+  card?: RichCard;
   ts: number;
 };
 
@@ -31,6 +34,11 @@ const SESSION_STORAGE_KEY = "cl_session_id";
 const MESSAGES_STORAGE_KEY = "cl_messages";
 const MIN_TYPING_DELAY_MS = 400;
 const NETWORK_FALLBACK_TEXT = `Sorry — I'm having trouble connecting just now. Give the team a ring on ${RESTAURANT.phone}, or try again in a moment.`;
+// A genuine connection failure never gets a graceful, server-built payload
+// (that's the whole point of this fallback path) — so the "Call the
+// Restaurant" CTA brief §31 asks for is attached here on the client instead,
+// as a real tel: link via the same QuickAction contract the server uses.
+const NETWORK_ERROR_ACTIONS: QuickAction[] = [{ kind: "tel", label: "Call the Restaurant" }];
 
 function createId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -76,7 +84,13 @@ function readStoredMessages(): ChatMessage[] {
 }
 
 type ChunkData = { text: string };
-type DoneData = { fullText: string; showCallbackCard: boolean; cached: boolean };
+type DoneData = {
+  fullText: string;
+  showCallbackCard: boolean;
+  cached: boolean;
+  quickActions?: QuickAction[];
+  card?: RichCard;
+};
 type ErrorData = { message: string };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -88,6 +102,10 @@ function parseChunkData(value: unknown): ChunkData | null {
   return { text: value.text };
 }
 
+// quickActions/card are optional, additive fields — anything present is
+// passed through as-is (the server is the only producer and already builds
+// these from real restaurant data, see lib/quickActions.ts), never rejecting
+// a "done" frame just because the newer optional fields are absent.
 function parseDoneData(value: unknown): DoneData | null {
   if (
     !isRecord(value) ||
@@ -97,7 +115,13 @@ function parseDoneData(value: unknown): DoneData | null {
   ) {
     return null;
   }
-  return { fullText: value.fullText, showCallbackCard: value.showCallbackCard, cached: value.cached };
+  return {
+    fullText: value.fullText,
+    showCallbackCard: value.showCallbackCard,
+    cached: value.cached,
+    quickActions: Array.isArray(value.quickActions) ? (value.quickActions as QuickAction[]) : undefined,
+    card: isRecord(value.card) ? (value.card as unknown as RichCard) : undefined,
+  };
 }
 
 function parseErrorData(value: unknown): ErrorData | null {
@@ -209,12 +233,22 @@ export function useChat(): UseChatResult {
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantId
-                ? { ...m, content: final.fullText, showCallbackCard: final.showCallbackCard, cached: final.cached }
+                ? {
+                    ...m,
+                    content: final.fullText,
+                    showCallbackCard: final.showCallbackCard,
+                    cached: final.cached,
+                    quickActions: final.quickActions,
+                    card: final.card,
+                  }
                 : m,
             ),
           );
           finish();
         } else if (errorData) {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === assistantId ? { ...m, quickActions: NETWORK_ERROR_ACTIONS } : m)),
+          );
           finish();
         }
       };

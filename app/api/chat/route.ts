@@ -8,6 +8,7 @@ import { getRequestIp, hashIp, hashQuestion } from "@/lib/hash";
 import { upsertCache, computeShowCallbackCard } from "@/lib/cache";
 import { isSessionCapped, checkAndConsumeUsageCaps } from "@/lib/rate-limit";
 import { detectDietaryLock } from "@/lib/dietary";
+import { BOOKING_ACTIONS, detectDishCard } from "@/lib/quickActions";
 import type { ChatMessage } from "@/lib/database.types";
 
 export const runtime = "nodejs";
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
         if (isSessionCapped(messageCount)) {
           await persistTurn(CAP_MESSAGE);
           send("chunk", { text: CAP_MESSAGE });
-          send("done", { fullText: CAP_MESSAGE, showCallbackCard: true, cached: false });
+          send("done", { fullText: CAP_MESSAGE, showCallbackCard: true, cached: false, quickActions: BOOKING_ACTIONS });
           controller.close();
           return;
         }
@@ -112,7 +113,12 @@ export async function POST(req: NextRequest) {
         if (matchComplaint(message)) {
           await persistTurn(COMPLAINT_RESPONSE, "complaint");
           send("chunk", { text: COMPLAINT_RESPONSE });
-          send("done", { fullText: COMPLAINT_RESPONSE, showCallbackCard: true, cached: false });
+          send("done", {
+            fullText: COMPLAINT_RESPONSE,
+            showCallbackCard: true,
+            cached: false,
+            quickActions: BOOKING_ACTIONS,
+          });
           controller.close();
           return;
         }
@@ -127,6 +133,8 @@ export async function POST(req: NextRequest) {
             fullText: intercept.text,
             showCallbackCard: intercept.action === "show_callback_card",
             cached: false,
+            quickActions: intercept.quickActions,
+            card: intercept.card,
           });
           controller.close();
           return;
@@ -150,10 +158,13 @@ export async function POST(req: NextRequest) {
               .eq("id", cacheHit.id);
             await persistTurn(cacheHit.answer);
             send("chunk", { text: cacheHit.answer });
+            const cacheShowCallback = computeShowCallbackCard(cacheHit.answer);
             send("done", {
               fullText: cacheHit.answer,
-              showCallbackCard: computeShowCallbackCard(cacheHit.answer),
+              showCallbackCard: cacheShowCallback,
               cached: true,
+              quickActions: cacheShowCallback ? BOOKING_ACTIONS : undefined,
+              card: detectDishCard(cacheHit.answer) ?? undefined,
             });
             controller.close();
             return;
@@ -165,7 +176,12 @@ export async function POST(req: NextRequest) {
         if (!usage.ok) {
           await persistTurn(FALLBACK_MESSAGE);
           send("chunk", { text: FALLBACK_MESSAGE });
-          send("done", { fullText: FALLBACK_MESSAGE, showCallbackCard: true, cached: false });
+          send("done", {
+            fullText: FALLBACK_MESSAGE,
+            showCallbackCard: true,
+            cached: false,
+            quickActions: BOOKING_ACTIONS,
+          });
           controller.close();
           return;
         }
@@ -241,16 +257,24 @@ export async function POST(req: NextRequest) {
           await upsertCache(supabase, message, fullText, "llm");
         }
 
+        const showCallbackCard = computeShowCallbackCard(fullText);
         send("done", {
           fullText,
-          showCallbackCard: computeShowCallbackCard(fullText),
+          showCallbackCard,
           cached: false,
+          quickActions: showCallbackCard ? BOOKING_ACTIONS : undefined,
+          card: detectDishCard(fullText) ?? undefined,
         });
         controller.close();
       } catch (err) {
         console.error("[api/chat] error", err);
         send("chunk", { text: FALLBACK_MESSAGE });
-        send("done", { fullText: FALLBACK_MESSAGE, showCallbackCard: true, cached: false });
+        send("done", {
+          fullText: FALLBACK_MESSAGE,
+          showCallbackCard: true,
+          cached: false,
+          quickActions: BOOKING_ACTIONS,
+        });
         controller.close();
       }
     },

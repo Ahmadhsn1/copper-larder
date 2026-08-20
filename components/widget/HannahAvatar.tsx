@@ -50,11 +50,11 @@ export function HannahAvatar({
 
       {online && (
         <span
-          className="absolute bottom-0 right-0 rounded-full border-2 border-surface bg-accent-2"
+          className="absolute bottom-0 right-0 rounded-full border-2 border-cream bg-copper-light"
           style={{ width: size * 0.28, height: size * 0.28 }}
           aria-hidden="true"
         >
-          <span className="block h-full w-full animate-ping rounded-full bg-accent-2 opacity-60" />
+          <span className="block h-full w-full animate-ping rounded-full bg-copper-light opacity-60" />
         </span>
       )}
     </span>

@@ -4,6 +4,10 @@
 // bubbles + typing indicator + inline callback card), quick-reply chips for
 // a fresh conversation, and the pinned input row. Purely presentational over
 // the state `useChat` already owns — Widget.tsx wires the two together.
+//
+// Desktop: a fixed bottom-right panel. Mobile (below `sm`): a bottom sheet
+// with a backdrop scrim, capped well short of full-screen so the page
+// behind it is never entirely hidden.
 
 import {
   useCallback,
@@ -13,73 +17,21 @@ import {
   useState,
   type FormEvent,
   type KeyboardEvent,
-  type ReactElement,
 } from "react";
 import { Message } from "./Message";
 import { CallbackCard } from "./CallbackCard";
 import { HannahAvatar } from "./HannahAvatar";
+import { QuickActions } from "./QuickActions";
 import type { UseChatResult } from "./useChat";
+import { OPENING_QUICK_ACTIONS } from "@/lib/quickActions";
+import { getOpenStatus } from "@/lib/restaurant";
+import { track } from "@/lib/analytics";
 
 type ChatWindowProps = {
   isOpen: boolean;
   onClose: () => void;
   chat: UseChatResult;
 };
-
-type QuickReply = { label: string; hint: string; icon: () => ReactElement };
-
-function MenuIcon() {
-  return (
-    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
-      <path
-        d="M4 2v5.5M4 2c-1 0-1.5 1-1.5 2.2S3 7.5 4 7.5M4 2c1 0 1.5 1 1.5 2.2S5 7.5 4 7.5M4 7.5V14M12 2v12M12 2c1.4 0 2 1.3 2 3s-.6 3-2 3"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ClockIcon() {
-  return (
-    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
-      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" />
-      <path d="M8 4.8V8l2.4 1.4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function PinIcon() {
-  return (
-    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
-      <path
-        d="M8 14s4.8-4.3 4.8-7.8A4.8 4.8 0 0 0 8 1.4a4.8 4.8 0 0 0-4.8 4.8C3.2 9.7 8 14 8 14Z"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinejoin="round"
-      />
-      <circle cx="8" cy="6.2" r="1.6" stroke="currentColor" strokeWidth="1.3" />
-    </svg>
-  );
-}
-
-function CalendarIcon() {
-  return (
-    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
-      <rect x="2" y="3" width="12" height="11" rx="1.6" stroke="currentColor" strokeWidth="1.3" />
-      <path d="M2 6.5h12M5 1.5v3M11 1.5v3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-const QUICK_REPLIES: QuickReply[] = [
-  { label: "See menu", hint: "Starters to puddings", icon: MenuIcon },
-  { label: "Opening hours", hint: "Today & the full week", icon: ClockIcon },
-  { label: "Find us", hint: "Brindley Place, parking too", icon: PinIcon },
-  { label: "Book a table", hint: "Ring, or leave your number", icon: CalendarIcon },
-];
 
 function CloseIcon() {
   return (
@@ -109,17 +61,17 @@ function TypingIndicator() {
       <div className="w-7 shrink-0">
         <HannahAvatar size={28} />
       </div>
-      <div className="animate-bubble-in flex items-center gap-2 rounded-2xl rounded-bl-sm border border-border bg-surface px-4 py-3">
-        <span className="flex items-center gap-1">
-          {[0, 150, 300].map((delay) => (
+      <div className="animate-bubble-in flex items-center gap-2 rounded-lg rounded-bl-sm border border-charcoal/12 bg-offwhite px-4 py-3">
+        <span className="flex items-center gap-1" aria-hidden="true">
+          {[0, 200, 400].map((delay) => (
             <span
               key={delay}
-              className="animate-typing-dot h-1.5 w-1.5 rounded-full bg-accent"
+              className="h-1 w-1 animate-pulse rounded-full bg-copper/70"
               style={{ animationDelay: `${delay}ms` }}
             />
           ))}
         </span>
-        <span className="text-[12px] text-muted">Hannah&apos;s typing…</span>
+        <span className="text-[12px] text-charcoal/50">Thinking…</span>
       </div>
     </div>
   );
@@ -131,6 +83,11 @@ export function ChatWindow({ isOpen, onClose, chat }: ChatWindowProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  const handleClose = useCallback(() => {
+    track("chat_closed");
+    onClose();
+  }, [onClose]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -145,11 +102,23 @@ export function ChatWindow({ isOpen, onClose, chat }: ChatWindowProps) {
   useEffect(() => {
     if (!isOpen) return;
     function handleEscape(event: globalThis.KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") handleClose();
     }
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
+  }, [isOpen, handleClose]);
+
+  // Lock the page behind the sheet from scrolling while it's open — most
+  // noticeable on mobile, where the sheet floats over live page content
+  // rather than replacing it full-screen.
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
 
   // Minimal focus trap: the dialog declares role="dialog" aria-modal="true",
   // so keyboard focus must not leak into the page behind it on Tab/Shift+Tab.
@@ -179,6 +148,12 @@ export function ChatWindow({ isOpen, onClose, chat }: ChatWindowProps) {
     return messages.map((m, i) => i === 0 || messages[i - 1].role !== m.role);
   }, [messages]);
 
+  // A short, time-aware opener for the empty-state greeting.
+  const greetingLine = useMemo(() => {
+    const status = getOpenStatus();
+    return status === "lunch" ? "Good afternoon." : "Good evening.";
+  }, []);
+
   if (!isOpen) return null;
 
   const lastMessage = messages[messages.length - 1];
@@ -188,120 +163,121 @@ export function ChatWindow({ isOpen, onClose, chat }: ChatWindowProps) {
     event.preventDefault();
     const text = inputValue.trim();
     if (!text || isStreaming) return;
+    track("chat_message_sent");
     send(text);
     setInputValue("");
   }
 
   return (
-    <div
-      ref={dialogRef}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Chat with Hannah, The Copper Larder"
-      onKeyDown={handleTrapTab}
-      className="animate-window-in fixed inset-0 z-50 flex h-[100dvh] w-full flex-col bg-surface sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[min(600px,calc(100dvh-112px))] sm:w-[380px] sm:rounded-2xl sm:border sm:border-border"
-      style={{ boxShadow: "var(--shadow-window)" }}
-    >
-      <header className="relative flex shrink-0 items-center justify-between gap-3 overflow-hidden border-b border-border bg-surface px-4 py-3 sm:rounded-t-2xl">
-        <div
-          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent/[0.07] via-transparent to-accent-2/[0.06]"
-          aria-hidden="true"
-        />
-        <div className="relative flex items-center gap-2.5">
-          <HannahAvatar size={42} online className="ring-2 ring-surface shadow-[0_2px_10px_rgba(180,83,9,0.25)]" />
-          <div className="flex flex-col leading-tight">
-            <span className="font-serif text-[17px] text-ink">Hannah</span>
-            <span className="flex items-center gap-1.5 text-[12px] text-muted">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent-2" aria-hidden="true" />
-              Host at The Copper Larder
-            </span>
+    <>
+      {/* Mobile-only backdrop scrim — desktop's small corner panel doesn't need one. */}
+      <div
+        className="animate-concierge-scrim-in fixed inset-0 z-40 bg-charcoal/40 sm:hidden"
+        onClick={handleClose}
+        aria-hidden="true"
+      />
+
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Chat with Hannah, The Larder Concierge"
+        onKeyDown={handleTrapTab}
+        className="animate-concierge-sheet-in fixed inset-x-0 bottom-0 z-50 flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-cream sm:inset-x-auto sm:bottom-24 sm:right-6 sm:h-[min(640px,calc(100dvh-120px))] sm:max-h-none sm:w-[400px] sm:rounded-2xl sm:border sm:border-charcoal/15"
+        style={{ boxShadow: "var(--shadow-window)" }}
+      >
+        <header className="relative flex shrink-0 items-center justify-between gap-3 border-b border-cream/10 bg-charcoal px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <HannahAvatar size={42} online className="ring-2 ring-cream/20 shadow-[0_2px_10px_rgba(23,22,19,0.35)]" />
+            <div className="flex flex-col justify-center gap-0.5 leading-tight">
+              <span className="text-[12px] uppercase tracking-[0.18em] text-copper-light">The Larder Concierge</span>
+              <span className="font-serif text-[17px] text-cream">Hannah, your table-side guide</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="Close chat"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-cream/70 transition-colors duration-200 hover:bg-cream/10 hover:text-cream"
+          >
+            <CloseIcon />
+          </button>
+        </header>
+
+        <div ref={scrollRef} className="chat-scroll min-h-0 flex-1 overflow-y-auto bg-cream px-4 py-4">
+          <div className="flex flex-col gap-0.5">
+            {messages.length === 0 && (
+              <div className="mb-1 flex w-full items-end gap-2">
+                <div className="w-7 shrink-0">
+                  <HannahAvatar size={28} />
+                </div>
+                <div className="animate-bubble-in max-w-[82%] rounded-lg rounded-bl-sm border border-charcoal/12 bg-offwhite px-4 py-3 text-[15px] leading-relaxed text-charcoal shadow-[0_1px_2px_rgba(23,22,19,0.06)]">
+                  <p className="font-serif text-[16px]">{greetingLine}</p>
+                  <p className="mt-1.5">
+                    I&apos;m the Larder Concierge. I can help you explore the menu, find something to suit your
+                    table, or get you ready for a visit.
+                  </p>
+                  <p className="mt-1.5 text-charcoal/70">What can I help with?</p>
+                </div>
+              </div>
+            )}
+
+            {messages.map((message, index) => (
+              <Message
+                key={message.id}
+                message={message}
+                isStreaming={isLastMessageStreaming && index === messages.length - 1}
+                isFirstInGroup={firstInGroup[index]}
+                onQuickAction={send}
+              >
+                {message.role === "model" && message.showCallbackCard && <CallbackCard sessionId={sessionId} />}
+              </Message>
+            ))}
+
+            {isTyping && <TypingIndicator />}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close chat"
-          className="relative flex h-11 w-11 items-center justify-center rounded-full text-muted transition-colors duration-200 hover:bg-bg hover:text-ink"
-        >
-          <CloseIcon />
-        </button>
-      </header>
 
-      <div ref={scrollRef} className="chat-texture chat-scroll flex-1 overflow-y-auto px-4 py-4">
-        <div className="flex flex-col gap-0.5">
-          {messages.length === 0 && (
-            <div className="mb-1 flex w-full items-end gap-2">
-              <div className="w-7 shrink-0">
-                <HannahAvatar size={28} />
-              </div>
-              <div className="animate-fade-up max-w-[78%] rounded-2xl rounded-bl-sm border border-border bg-surface px-4 py-2.5 text-[15px] leading-relaxed text-ink shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
-                Hello, I&apos;m Hannah — ask me about the menu, opening hours, or getting a table.
-              </div>
+        {messages.length === 0 && (
+          <div className="shrink-0 border-t border-charcoal/10 bg-cream px-4 py-3">
+            <QuickActions actions={OPENING_QUICK_ACTIONS} onSend={send} />
+          </div>
+        )}
+
+        <form
+          onSubmit={handleSubmit}
+          className="shrink-0 border-t border-charcoal/10 bg-cream p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+        >
+          <div className="flex items-center gap-2">
+            <label htmlFor="cl-chat-input" className="sr-only">
+              Type a message
+            </label>
+            <div className="flex-1 rounded-full bg-offwhite shadow-[inset_0_1px_2px_rgba(23,22,19,0.05)] ring-1 ring-inset ring-charcoal/15 transition-all duration-200 focus-within:ring-2 focus-within:ring-copper/60">
+              <input
+                id="cl-chat-input"
+                ref={inputRef}
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                disabled={isStreaming}
+                placeholder="Ask the Larder…"
+                autoComplete="off"
+                className="h-11 w-full rounded-full bg-transparent px-4 text-[14px] text-charcoal placeholder:text-charcoal/40 outline-none disabled:opacity-60"
+              />
             </div>
-          )}
-
-          {messages.map((message, index) => (
-            <Message
-              key={message.id}
-              message={message}
-              isStreaming={isLastMessageStreaming && index === messages.length - 1}
-              isFirstInGroup={firstInGroup[index]}
-            >
-              {message.role === "model" && message.showCallbackCard && <CallbackCard sessionId={sessionId} />}
-            </Message>
-          ))}
-
-          {isTyping && <TypingIndicator />}
-        </div>
-      </div>
-
-      {messages.length === 0 && (
-        <div className="flex shrink-0 flex-wrap gap-2 border-t border-border bg-surface px-4 py-3">
-          {QUICK_REPLIES.map(({ label, icon: Icon }) => (
             <button
-              key={label}
-              type="button"
-              onClick={() => send(label)}
-              className="flex h-9 items-center gap-1.5 rounded-full border border-border bg-bg px-3.5 text-[13px] font-medium text-ink transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:text-accent hover:shadow-[0_2px_8px_rgba(180,83,9,0.15)]"
+              type="submit"
+              disabled={isStreaming || !inputValue.trim()}
+              aria-label="Send message"
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-copper text-cream transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:bg-brown hover:shadow-[0_4px_14px_rgba(107,74,54,0.35)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none ${
+                inputValue.trim() && !isStreaming ? "scale-100" : "scale-90"
+              }`}
             >
-              <Icon />
-              {label}
+              <SendIcon />
             </button>
-          ))}
-        </div>
-      )}
-
-      <form
-        onSubmit={handleSubmit}
-        className="flex shrink-0 items-center gap-2 border-t border-border bg-surface p-3 sm:rounded-b-2xl"
-      >
-        <label htmlFor="cl-chat-input" className="sr-only">
-          Type a message
-        </label>
-        <div className="flex-1 rounded-full bg-bg shadow-[inset_0_1px_2px_rgba(28,25,23,0.05)] ring-1 ring-inset ring-border transition-all duration-200 focus-within:ring-2 focus-within:ring-accent/60">
-          <input
-            id="cl-chat-input"
-            ref={inputRef}
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            disabled={isStreaming}
-            placeholder="Ask about the menu, hours, a table…"
-            autoComplete="off"
-            className="h-11 w-full rounded-full bg-transparent px-4 text-[14px] text-ink placeholder:text-muted/70 outline-none disabled:opacity-60"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={isStreaming || !inputValue.trim()}
-          aria-label="Send message"
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:bg-accent-hover hover:shadow-[0_4px_14px_rgba(180,83,9,0.35)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none ${
-            inputValue.trim() && !isStreaming ? "scale-100" : "scale-90"
-          }`}
-        >
-          <SendIcon />
-        </button>
-      </form>
-    </div>
+          </div>
+        </form>
+      </div>
+    </>
   );
 }

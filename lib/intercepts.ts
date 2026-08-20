@@ -1,10 +1,24 @@
-import { RESTAURANT, SUNDAY_ROAST, HOURS_TEXT, getOpenStatus } from "./restaurant";
+import { MENU, RESTAURANT, SUNDAY_ROAST, HOURS_TEXT, getOpenStatus } from "./restaurant";
+import {
+  BOOKING_ACTIONS,
+  MENU_INTRO_ACTIONS,
+  PREFERENCE_QUICK_ACTIONS,
+  SUNDAY_ROAST_ACTIONS,
+  VISIT_ACTIONS,
+  categoryFollowUpActions,
+  formatMenuSection,
+  matchPreference,
+  type QuickAction,
+  type RichCard,
+} from "./quickActions";
 
 export type InterceptResult = {
   text: string;
   action?: "show_callback_card";
   source: "intercept";
   id: string;
+  quickActions?: QuickAction[];
+  card?: RichCard;
 };
 
 type Rule = {
@@ -34,6 +48,7 @@ const RULES: Rule[] = [
         source: "intercept",
         id: "hours",
         text: `${statusLine} ${HOURS_TEXT}.`,
+        quickActions: VISIT_ACTIONS,
       };
     },
   },
@@ -44,6 +59,8 @@ const RULES: Rule[] = [
       source: "intercept",
       id: "address",
       text: `We're at ${RESTAURANT.address}. ${RESTAURANT.parking}`,
+      card: { type: "info", title: "Visit", lines: [RESTAURANT.address] },
+      quickActions: VISIT_ACTIONS,
     }),
   },
   {
@@ -53,6 +70,7 @@ const RULES: Rule[] = [
       source: "intercept",
       id: "parking",
       text: RESTAURANT.parking,
+      quickActions: VISIT_ACTIONS,
     }),
   },
   {
@@ -71,6 +89,7 @@ const RULES: Rule[] = [
       source: "intercept",
       id: "sunday_roast",
       text: `Sunday roast is ${SUNDAY_ROAST.price}, served ${SUNDAY_ROAST.hours} — ${SUNDAY_ROAST.note}.`,
+      quickActions: SUNDAY_ROAST_ACTIONS,
     }),
   },
   {
@@ -89,6 +108,74 @@ const RULES: Rule[] = [
       source: "intercept",
       id: "vegetarian",
       text: "Plenty. Beetroot & barley risotto is the standout — properly good, not an afterthought. Mushroom toast to start.",
+      card: { type: "dish", name: "Heritage Beetroot & Barley Risotto", description: "", price: "£16", tags: ["vg"] },
+      quickActions: [{ kind: "send", label: "View Menu", value: "Show me the menu" }],
+    }),
+  },
+  {
+    id: "recommend_prompt",
+    patterns: [
+      /what should i (order|eat|get|have)/,
+      /\brecommend/,
+      /\bsuggest/,
+      /what'?s good/,
+      /what do you (recommend|suggest)/,
+    ],
+    respond: () => ({
+      source: "intercept",
+      id: "recommend_prompt",
+      text: "What are you in the mood for?",
+      quickActions: PREFERENCE_QUICK_ACTIONS,
+    }),
+  },
+  {
+    id: "starters",
+    patterns: [/\bstarters?\b/],
+    respond: () => ({
+      source: "intercept",
+      id: "starters",
+      text: formatMenuSection(MENU.find((s) => s.id === "starters")!),
+      quickActions: categoryFollowUpActions("starters"),
+    }),
+  },
+  {
+    id: "mains",
+    patterns: [/\bmains?\b/],
+    respond: () => ({
+      source: "intercept",
+      id: "mains",
+      text: formatMenuSection(MENU.find((s) => s.id === "mains")!),
+      quickActions: categoryFollowUpActions("mains"),
+    }),
+  },
+  {
+    id: "sides",
+    patterns: [/\bsides?\b/],
+    respond: () => ({
+      source: "intercept",
+      id: "sides",
+      text: formatMenuSection(MENU.find((s) => s.id === "sides")!),
+      quickActions: categoryFollowUpActions("sides"),
+    }),
+  },
+  {
+    id: "desserts",
+    patterns: [/\bdesserts?\b/, /\bpudding(s)?\b/],
+    respond: () => ({
+      source: "intercept",
+      id: "desserts",
+      text: formatMenuSection(MENU.find((s) => s.id === "desserts")!),
+      quickActions: categoryFollowUpActions("desserts"),
+    }),
+  },
+  {
+    id: "menu",
+    patterns: [/\bmenu\b/, /what.*(you have|on offer)/, /what.*food/],
+    respond: () => ({
+      source: "intercept",
+      id: "menu",
+      text: "Here's what we've got — starters through pudding, plus the Sunday roast on Sundays. Where would you like to start?",
+      quickActions: MENU_INTRO_ACTIONS,
     }),
   },
   {
@@ -135,6 +222,7 @@ const RULES: Rule[] = [
       id: "booking",
       text: `Bookings are by phone — give the team a ring on ${RESTAURANT.phone}. Or leave your number and they'll call you back.`,
       action: "show_callback_card",
+      quickActions: BOOKING_ACTIONS,
     }),
   },
   {
@@ -145,12 +233,27 @@ const RULES: Rule[] = [
       id: "phone",
       text: `You can reach us on ${RESTAURANT.phone}.`,
       action: "show_callback_card",
+      quickActions: BOOKING_ACTIONS,
     }),
   },
 ];
 
 /** Deterministic, zero-cost keyword/regex matcher. Returns null if nothing matches. */
 export function matchIntercept(message: string): InterceptResult | null {
+  // Preference-quick-action labels ("Something Rich", "Vegetarian", ...) are
+  // checked first — an exact match must win over any looser keyword rule
+  // that happens to share a word (e.g. the "vegetarian" info rule).
+  const preference = matchPreference(message);
+  if (preference) {
+    return {
+      source: "intercept",
+      id: "preference_recommendation",
+      text: preference.text,
+      card: preference.card,
+      quickActions: preference.actions,
+    };
+  }
+
   const normalized = normalize(message);
   for (const rule of RULES) {
     if (rule.patterns.some((pattern) => pattern.test(normalized))) {
