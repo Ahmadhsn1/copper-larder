@@ -140,7 +140,11 @@ export function Hero() {
 
       <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center px-6 text-center sm:px-10">
         <div ref={wordmarkRef} style={hiddenStyle}>
-          <p className="font-serif text-[13px] uppercase tracking-[0.32em] text-cream/70 sm:text-sm">
+          <p className="flex items-center justify-center gap-2.5 font-serif text-[13px] uppercase tracking-[0.32em] text-cream/70 sm:text-sm">
+            <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-copper-light opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-copper-light" />
+            </span>
             {RESTAURANT.name}
           </p>
         </div>

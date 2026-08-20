@@ -1,6 +1,6 @@
 // Hannah's avatar — reused at every size the widget needs (launcher, header,
 // message bubbles) so there's a single source of truth for "what Hannah
-// looks like." Backed by public/hannah-avatar.jpg. Grows and glows on
+// looks like." Backed by public/hannah-avatar.png. Grows and glows on
 // hover by default — the picture itself is the interactive, alive part of
 // the widget, not just a static badge.
 //
