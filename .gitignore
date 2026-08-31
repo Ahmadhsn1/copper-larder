@@ -30,8 +30,14 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files — committed intentionally for this private repo per owner request
-# (contains real API keys; do not make this repo public without rotating them)
+# env files — never commit real values; .env.example is the template
+.env
+.env.*
+!.env.example
+
+# local agent config
+AGENTS.md
+CLAUDE.md
 
 # vercel
 .vercel

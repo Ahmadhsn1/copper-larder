@@ -4,8 +4,10 @@ import { RESTAURANT, getLondonDayStartUTC } from "@/lib/restaurant";
 import LiveRefresh from "@/components/dashboard/LiveRefresh";
 import type { Database } from "@/lib/database.types";
 
-// Unauthenticated by design — see notes returned alongside this build.
-// This page is never linked from public nav; access is by direct URL only.
+// Owner-facing operations view: leads, conversation volume, top questions and
+// any conversation the handoff detector flagged for a manager. Never linked
+// from public nav; access is gated by HTTP Basic Auth in middleware.ts
+// whenever DASHBOARD_PASSWORD is set (see README → Security).
 export const dynamic = "force-dynamic";
 
 type LeadRow = Database["public"]["Tables"]["leads"]["Row"];
@@ -161,7 +163,7 @@ export default async function DashboardPage() {
           <header className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.14em] text-accent">
-                {RESTAURANT.name} · Sales Demo
+                {RESTAURANT.name} · Operations
               </p>
               <h1 className="mt-2 font-serif text-3xl text-ink sm:text-4xl">Dashboard</h1>
               <p className="mt-1 text-sm text-muted">
