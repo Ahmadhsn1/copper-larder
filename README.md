@@ -8,6 +8,8 @@ A production-grade, end-to-end reference implementation of a conversational book
 and menu assistant — streamed from the model, grounded in real data, and wrapped in
 the cost controls, guardrails and abuse protection a public LLM endpoint actually needs.
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-copper--larder.vercel.app-B45309?style=flat-square&logo=vercel&logoColor=white)](https://copper-larder.vercel.app)
+
 [![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React_19-20232A?style=flat-square&logo=react&logoColor=61DAFB)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
@@ -20,6 +22,8 @@ the cost controls, guardrails and abuse protection a public LLM endpoint actuall
 <br/>
 
 <img src="./docs/hero.jpg" alt="The Copper Larder landing page with the Larder Concierge chat widget open" width="880"/>
+
+**[▶ Open the live site](https://copper-larder.vercel.app)**
 
 </div>
 
@@ -208,8 +212,9 @@ tables, the `increment_rate_limit` function, and enables RLS.
 npm run dev     # http://localhost:3000  ·  dashboard at /dashboard
 ```
 
-Deploy to Vercel by importing the repo and setting the same environment variables in
-the project settings.
+This project is deployed on Vercel at **[copper-larder.vercel.app](https://copper-larder.vercel.app)**
+— every push to `main` ships. To run your own copy, import the repo on Vercel and set the
+same environment variables in the project settings.
 
 ---
 
