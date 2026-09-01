@@ -185,8 +185,8 @@ composes language around facts it is handed; it is never the source of a fact.
 **Prerequisites:** Node 20+, a Supabase project, a Gemini API key.
 
 ```bash
-git clone https://github.com/Ahmadhsn1/copper-larder.git
-cd copper-larder
+git clone https://github.com/Ahmadhsn1/larder-concierge-ai.git
+cd larder-concierge-ai
 npm install
 cp .env.example .env.local     # fill in the values below
 ```

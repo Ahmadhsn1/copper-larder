@@ -204,7 +204,15 @@ export function ChatWindow({ isOpen, onClose, chat }: ChatWindowProps) {
           </button>
         </header>
 
-        <div ref={scrollRef} className="chat-scroll min-h-0 flex-1 overflow-y-auto bg-cream px-4 py-4">
+        {/* data-lenis-prevent: the marketing site runs Lenis smooth-scroll, which
+            otherwise captures wheel events here and scrolls the page behind the
+            widget instead of the transcript. overscroll-contain stops scroll
+            chaining on the native-scroll (reduced-motion / touch) path. */}
+        <div
+          ref={scrollRef}
+          data-lenis-prevent
+          className="chat-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain bg-cream px-4 py-4"
+        >
           <div className="flex flex-col gap-0.5">
             {messages.length === 0 && (
               <div className="mb-1 flex w-full items-end gap-2">
