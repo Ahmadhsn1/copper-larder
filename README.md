@@ -182,7 +182,7 @@ composes language around facts it is handed; it is never the source of a fact.
 
 ## Getting started
 
-**Prerequisites:** Node 20+, a Supabase project, a Gemini API key.
+**Prerequisites:** Node 22+, a Supabase project, a Gemini API key.
 
 ```bash
 git clone https://github.com/Ahmadhsn1/larder-concierge-ai.git
